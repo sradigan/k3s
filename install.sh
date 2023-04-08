@@ -497,20 +497,19 @@ setup_selinux() {
         package_installer=dnf
     fi
 
-    if [ "${rpm_channel}" = "testing" ]; then
-        available_version=$(curl -s https://api.github.com/repos/k3s-io/k3s-selinux/releases |  grep -oP '(?<="browser_download_url": ")[^"]*' | grep -oE "[^\/]+${rpm_target}\.noarch\.rpm" | head -n 1)
-    else
-        available_version=$(curl -s https://api.github.com/repos/k3s-io/k3s-selinux/releases/latest |  grep -oP '(?<="browser_download_url": ")[^"]*' | grep -oE "[^\/]+${rpm_target}\.noarch\.rpm" )
-    fi
-
-    policy_hint="please install:
-    ${package_installer} install -y container-selinux
-    ${package_installer} install -y https://${rpm_site}/k3s/${rpm_channel}/common/${rpm_site_infix}/noarch/${available_version}
-"
-
     if [ "$INSTALL_K3S_SKIP_SELINUX_RPM" = true ] || can_skip_download_selinux || [ ! -d /usr/share/selinux ]; then
         info "Skipping installation of SELinux RPM"
     else
+        if [ "${rpm_channel}" != "testing" ]; then
+            available_version=$(curl -s https://api.github.com/repos/k3s-io/k3s-selinux/releases |  grep -oP '(?<="browser_download_url": ")[^"]*' | grep -oE "[^\/]+${rpm_target}\.noarch\.rpm" | head -n 1)
+        else
+            available_version=$(curl -s https://api.github.com/repos/k3s-io/k3s-selinux/releases/latest |  grep -oP '(?<="browser_download_url": ")[^"]*' | grep -oE "[^\/]+${rpm_target}\.noarch\.rpm" )
+        fi
+
+        policy_hint="please install:
+        ${package_installer} install -y container-selinux
+        ${package_installer} install -y https://${rpm_site}/k3s/${rpm_channel}/common/${rpm_site_infix}/noarch/${available_version}
+"
         install_selinux_rpm ${rpm_site} ${rpm_channel} ${rpm_target} ${rpm_site_infix}
     fi
 
